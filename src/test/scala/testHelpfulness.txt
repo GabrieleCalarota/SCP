@@ -1,0 +1,3 @@
+helpfulness
+helpfulness 65 100
+helpfulness 65
