@@ -1,15 +1,15 @@
 package foodReview
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{col, max}
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
 import scala.math.min
-import scala.util.Random
 
 
-object Ds {
+object Dataset {
 
   /**
     * Converts standford txt in RDD of Maps where each Map has "userId", "productId", "score" "time" and "helpfulness"
@@ -52,45 +52,24 @@ object Ds {
   }
 
   /**
-    * Gets dataset from txt as DataFrame.
-    *
-    * @param spark SparkSession.
-    * @param path Path of the txt.
-    * @return DataFrame corresponding to the given txt.
-    */
-  //TODO: remove
-  /*def importStanfordDF(spark:SparkSession, path:String): DataFrame = {
-    import spark.implicits._
-    val s = importRDD(spark, path).map(m => {(
-      m.getOrElse("userId", ""),
-      m.getOrElse("productId", ""),
-      m.getOrElse("score", ""),
-      m.getOrElse("time", ""),
-      m.getOrElse("helpfulness", ""))
-    }).toDF()
-      .withColumnRenamed("_1", "userId")
-      .withColumnRenamed("_2", "productId")
-      .withColumnRenamed("_3", "score")
-      .withColumnRenamed("_4", "time")
-      .withColumnRenamed("_5", "helpfulness")
-    s
-  }*/
-
-  /**
-    * Doubles the size of 'rumDf' with random userIds and productIds.
+    * Doubles the size of dataset with random userIds and productIds.
     * Function useful for stress testing.
     *
-    * @param rumDf DataFrame.
-    * @return DataFrame with the same schema of 'rumDf' but with double size.
+    * @param rdd dataset.
+    * @return RDD with the same schema of dataset but with size larger.
     */
-  //TODO: convert to RDD
-  def increaseSizeDf(rumDf:DataFrame): DataFrame = {
-    val df = rumDf
-    val maxProducts = rumDf.select("productId").agg(max("productId")).head.get(0).toString.toInt
-    val maxUser = rumDf.select("userId").agg(max("userId")).head.get(0).toString.toInt
-    df.withColumn("productId", col("productId").cast("Int") + Random.nextInt(maxProducts))
-      .withColumn("userId", col("userId").cast("Int") + Random.nextInt(maxUser))
-      .union(rumDf)
+  def increaseSizeDf(sparkContext: SparkContext, rdd:RDD[Map[String, String]], size: Double=2.0): RDD[Map[String, String]] = {
+    var fraction: Double = 1
+    val bigRdd: RDD[Map[String, String]] = if (size > 1) {
+      val newRdds = (1 to size.toInt).map(_ => rdd)
+      val bigRdd = sparkContext.union(newRdds)
+      bigRdd
+    } else {
+      fraction = size
+      rdd
+    }
+    val sampleRdd: RDD[Map[String, String]] = bigRdd.sample(withReplacement = false, fraction)
+    sampleRdd
   }
 
   /**
@@ -102,7 +81,6 @@ object Ds {
     * @param df DataFrame to store.
     * @param path Path storage location.
     */
-  //TODO: STORE for RDD?
   def storeDfPt1(df:DataFrame, path:String, partition:Int=1):Unit = {
     df.repartition(partition)
       .write.format("com.databricks.spark.csv")

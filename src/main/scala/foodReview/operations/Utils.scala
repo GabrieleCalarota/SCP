@@ -249,4 +249,28 @@ object Utils {
     spark.read.textFile(path)
   }
 
+  /**
+    * Transform bytes human-readable memory size
+    * @param numBytes number of bytes to transform
+    * @return String of number transformed and unit of measure
+   */
+  def transformBytes(numBytes:Long, unit: String="b"): String = {
+    if (numBytes >= 1024){
+      transformBytes(numBytes/1024, unit=getNextUnitMemorySize(unit))
+    } else {
+      s"$numBytes $unit"
+    }
+  }
+
+  /**
+    * Get the next memory size unit available
+    *
+    * @param unit string denoting memory size
+    * @return String denoting next memory size
+    */
+  def getNextUnitMemorySize(unit: String): String = {
+    val states = Map("b" -> "KB", "KB" -> "MB", "MB" -> "GB", "GB" -> "TB")
+    states(unit)
+  }
+
 }

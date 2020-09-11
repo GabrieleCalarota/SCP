@@ -1,5 +1,7 @@
 package foodReview
 
+import java.io.File
+
 import foodReview.operations._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -53,16 +55,24 @@ object Main{
 
     val rk = new ProductRanking()
     val rc = new ProductRecomendation()
-    val sml = new ProductSimilarity()
-    //TODO: remove
-    //Utils.initSession(spark)
-    println("Initializing ...\n")
 
+    println("Loading dataset ...\n")
     //import Dataset from txt
-    //TODO: remove
-    //val rumDf: DataFrame= Ds.importStanfordDF(spark, pathDatabase)
+    var rumRDD: RDD[Map[String, String]] = Dataset.importRDD(spark, pathDatabase)
+    println(s"Original dataset loaded with ${rumRDD.count} reviews")
+    val originalDatasetSize = new File(pathDatabase).length()
+    println(s"Dataset is ~ ${Utils.transformBytes(originalDatasetSize)}")
 
-    val rumRDD: RDD[Map[String, String]] = Ds.importRDD(spark, pathDatabase)
+
+    val size = sys.env.getOrElse("size", 1).toString.toDouble
+    rumRDD = {
+      println(s"Changing size of database by $size times. Dataset will be ~${Utils.transformBytes((originalDatasetSize * size).toLong)}")
+      val enlargedRDD: RDD[Map[String, String]] = Dataset.increaseSizeDf(spark.sparkContext, rumRDD, size = size)
+      println(s"Dataset now has ${enlargedRDD.count} of reviews")
+      enlargedRDD
+    }
+
+    //throw new InvalidOp("exit")
 
     var elapsedTime = 0.0
     val limitResult = 20
@@ -74,16 +84,17 @@ object Main{
         var result = spark.emptyDataFrame
         op(0) match {
           case "recommend" =>
-            print("Computing Product Recommendation for userID = ")
+            print("Computing Product Recommendation for ")
             var user: String = ""
             user = if (op.length < 2) {
               //Pick random userID
+              print("random userID = ")
               rumRDD.takeSample(withReplacement = false, 1)(0).getOrElse("userId",
                 throw new InvalidOp("userId not found"))
             } else {
               op(1)
             }
-            println(s"$user")
+            println(s"chosen userID = $user")
             elapsedTime = time {
               val r = rc.productRecommendation(rumRDD, user)
                 .toDF("productId", "productPrediction")
@@ -93,7 +104,7 @@ object Main{
               result = r
             }
             val fileName = s"RECOMMEND__$user" +  ".csv"
-            Ds.storeDfPt1(result, resourcesFile + fileName)
+            Dataset.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "rank" =>
             println("Computing Product Ranking ...")
@@ -106,7 +117,7 @@ object Main{
               result = r
             }
             val fileName = "RANK.csv"
-            Ds.storeDfPt1(result, resourcesFile + fileName)
+            Dataset.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "evolutionM" =>
             if (op.length < 3)
@@ -123,7 +134,7 @@ object Main{
                     result.show()
               }
               val fileName = s"PM__$product" + s"_${products.mkString("_")}"+s"_YEAR_$year" + ".csv"
-              Ds.storeDfPt1(result, resourcesFile + fileName)
+              Dataset.storeDfPt1(result, resourcesFile + fileName)
               println("Results saved in " + resourcesFile+fileName)
             } catch {
               case _: UnsupportedOperationException => println("Not existing year in the dataset")
@@ -151,7 +162,7 @@ object Main{
             }
             //val fileName = "PY" + LocalDateTime.now.format(DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")) + ".csv"
             val fileName = s"PY_$product" + s"_${products.mkString("_")}"+s"_YEARS_$yb"+s"_$ye" + ".csv"
-            Ds.storeDfPt1(result, resourcesFile + fileName)
+            Dataset.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "helpfulness" =>
             val threshold : Int = op.lift(2).getOrElse("0").toInt
@@ -166,7 +177,7 @@ object Main{
               result = r
             }
             val fileName = s"HELPFULNESS_threshold_$threshold" + s"_limit_$limit"+ ".csv"
-            Ds.storeDfPt1(result, resourcesFile + fileName)
+            Dataset.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "" =>
           case _ => throw new InvalidOp("Not allowed operation")

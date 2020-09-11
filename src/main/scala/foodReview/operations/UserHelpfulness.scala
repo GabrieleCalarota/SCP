@@ -4,49 +4,6 @@ import org.apache.spark.rdd.RDD
 
 
 object UserHelpfulness {
-  /**
-    * Computes the helpfulness percentage (the average) associated with each couple (productId, score).
-    *
-    * @param df DataFrame containing at least (productId, score, helpfulness).
-    * @return DataFrame (score, productId, productScoreHelpfulness).
-    */
-  /*//TODO: remove
-  private def productScoreHelpfulness(df: DataFrame) = {
-    df.groupBy("score", "productId")
-        .agg(sum(col("helpfulness"))/count(col("helpfulness")) as "productScoreHelpfulness")
-  }*/
-
-  /**
-    * Computes the helpfulness associated to each user.
-    *
-    * @note If an user has an helpfulness score that is lower than the average (of the other users that gave the same
-    *       score to the same product), its score is incremented by adding the average score to the initial score and
-    *       dividing by 2. The final helpfulness score is the average of the user helpfulness for the evaluated products.
-    *
-    * @param df DataFrame containing at least (userId, productId, score, helpfulness).
-    * @return DataFrame with columns (userId, userHelpfulness).
-    */
-  //TODO: remove
-  /*def userHelpfulness(df:DataFrame, threshold: Int): DataFrame = {
-    val userHelpDf =  df.groupBy("userId")
-          .agg(sum("helpfulness")/count("helpfulness") as "userHelpfulness")
-    // products helpfulness by score
-    val smhDf = productScoreHelpfulness(df)
-    val smhJDf = df.join(smhDf, smhDf("productId") === df("productId") && smhDf("score") === df("score"))
-    val helpDf = smhJDf.join(userHelpDf, "userId")
-    val p1 = helpDf.withColumn("userHelpfulness", when
-      (
-        col("userHelpfulness") < col("productScoreHelpfulness"),
-        (col("userHelpfulness") + col("productScoreHelpfulness")) / lit(2)
-      ).otherwise(col("userHelpfulness")))
-    // since an user can have different scores (because of the different averages for each product and score)
-    // recompute again the average for each user
-    p1.select("userId", "userHelpfulness")
-      .filter(col("userHelpfulness") > threshold)
-      .groupBy("userId")
-      .agg(sum(col("userHelpfulness"))/count(col("userHelpfulness")) as "userHelpfulness")
-
-  }*/
 
   /**
     * Computes the helpfulness associated to each user.
