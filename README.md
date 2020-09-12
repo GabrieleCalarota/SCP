@@ -14,8 +14,6 @@ This project allows the analysis of amazon food review dataset, which can be fou
 
 The dataset and all the other resources will be downloaded automatically as the project is executed.
 
-The operations implemented use only one type of representation: RDD.
-
 ### Setup AWS
  - Create a bucket in S3 Storage
  - Upload all the project files (or eventually only test files)
@@ -112,6 +110,7 @@ evolutionM year productID(s)
 #### User Helpfulness
 
 Computes the helpfulness of a given user.
+
 **Note**: 
  - If no userID is given in input, the program picks one random userID from the dataset 
  - If an user has an helpfulness score that is lower than the average (of the other users that gave the same rating to the same product), 
