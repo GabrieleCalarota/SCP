@@ -65,11 +65,13 @@ object Main{
 
 
     val size = sys.env.getOrElse("size", 1).toString.toDouble
-    rumRDD = {
-      println(s"Changing size of database by $size times. Dataset will be ~${Utils.transformBytes((originalDatasetSize * size).toLong)}")
-      val enlargedRDD: RDD[Map[String, String]] = Dataset.increaseSizeDf(spark.sparkContext, rumRDD, size = size)
-      println(s"Dataset now has ${enlargedRDD.count} of reviews")
-      enlargedRDD
+    if (size != 1.0){
+      rumRDD = {
+        println(s"Changing size of database by $size times. Dataset will be ~${Utils.transformBytes((originalDatasetSize * size).toLong)}")
+        val enlargedRDD: RDD[Map[String, String]] = Dataset.increaseSizeDf(spark.sparkContext, rumRDD, size = size)
+        println(s"Dataset now has ${enlargedRDD.count} of reviews")
+        enlargedRDD
+      }
     }
 
     //throw new InvalidOp("exit")
@@ -92,9 +94,10 @@ object Main{
               rumRDD.takeSample(withReplacement = false, 1)(0).getOrElse("userId",
                 throw new InvalidOp("userId not found"))
             } else {
+              print("chosen userID = ")
               op(1)
             }
-            println(s"chosen userID = $user")
+            println(s"$user")
             elapsedTime = time {
               val r = rc.productRecommendation(rumRDD, user)
                 .toDF("productId", "productPrediction")

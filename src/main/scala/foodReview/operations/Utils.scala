@@ -213,8 +213,8 @@ object Utils {
   def downloadAndSaveDataset(sparkSession: SparkSession, url:String="https://snap.stanford.edu/data/finefoods.txt.gz", path:String="resources/"): String = {
     val gzName:String = "finefoods.txt.gz"
     val datasetName:String = "dataset.txt"
-    val fs = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
-    val fileExists = FileSystem.get(new URI(path+datasetName), sparkSession.sparkContext.hadoopConfiguration).exists(new Path(path+datasetName))
+    val fs = FileSystem.get(URI.create(path), sparkSession.sparkContext.hadoopConfiguration)
+    val fileExists = fs.exists(new Path(path+datasetName))
     if (fileExists){
       path+datasetName
     } else {
@@ -233,8 +233,8 @@ object Utils {
       fos.close()
       println("Clean up ..")
       new File(path + gzName).delete()
-      println("Dataset saved at: "+path+gzName)
-      path + gzName
+      println("Dataset saved at: "+path+datasetName)
+      path + datasetName
     }
   }
 
