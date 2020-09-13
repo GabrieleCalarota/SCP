@@ -2,7 +2,7 @@ package foodReview
 
 import java.io.File
 
-import foodReview.operations._
+import foodReview.classes._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 // import java.io.FileWriter // Import required to keep track of elapsed time
@@ -51,14 +51,29 @@ object Main{
     val testDir = path + "src/test/scala/"
     val filename = testDir + sys.env.getOrElse("testFileName", "totalTest.txt")
 
+
     println(s"Testing filename = $filename ")
 
     val rk = new ProductRanking()
-    val rc = new ProductRecomendation()
+    val rc = new ProductRecommendation()
 
     println("Loading dataset ...\n")
     //import Dataset from txt
     var rumRDD: RDD[Map[String, String]] = Dataset.importRDD(spark, pathDatabase)
+    /*val rumDF = rumRDD.map(m => {(
+      m.getOrElse("userId", ""),
+      m.getOrElse("productId", ""),
+      m.getOrElse("score", ""),
+      m.getOrElse("time", ""),
+      m.getOrElse("helpfulness", ""))
+    }).toDF()
+      .withColumnRenamed("_1", "userId")
+      .withColumnRenamed("_2", "productId")
+      .withColumnRenamed("_3", "score")
+      .withColumnRenamed("_4", "time")
+      .withColumnRenamed("_5", "helpfulness")
+    Dataset.storeDfPt1(rumDF, resourcesFile + "dataset.csv")
+    throw new InvalidOp("exit")*/
     println(s"Original dataset loaded with ${rumRDD.count} reviews")
     val originalDatasetSize = new File(pathDatabase).length()
     println(s"Dataset is ~ ${Utils.transformBytes(originalDatasetSize)}")

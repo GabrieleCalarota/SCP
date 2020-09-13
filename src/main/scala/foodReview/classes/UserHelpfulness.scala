@@ -1,4 +1,4 @@
-package foodReview.operations
+package foodReview.classes
 
 import org.apache.spark.rdd.RDD
 

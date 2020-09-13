@@ -1,4 +1,4 @@
-package foodReview
+package foodReview.classes
 
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
@@ -7,7 +7,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.math.min
-
 
 object Dataset {
 

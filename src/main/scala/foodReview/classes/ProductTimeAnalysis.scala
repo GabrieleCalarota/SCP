@@ -1,6 +1,6 @@
-package foodReview.operations
+package foodReview.classes
 
-import foodReview.operations.Utils.idExists
+import foodReview.classes.Utils.idExists
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.joda.time.DateTime
