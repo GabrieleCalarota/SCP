@@ -121,4 +121,18 @@ object Utils {
     states(unit)
   }
 
+  /**
+    * Evaluates and print elapsed time of a block
+    *
+    * @param block instructions to be executed
+    * @return Double of seconds elapsed
+  */
+  def time[R](block: => R): R = {
+    val t0 = System.nanoTime()
+    val result = block
+    val t1 = System.nanoTime()
+    println("Elapsed time: " + (t1 - t0)/1000000000.0 + "s")
+    //(t1 - t0)/1000000000.0
+    result
+  }
 }

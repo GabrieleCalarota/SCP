@@ -10,14 +10,6 @@ import org.apache.spark.sql.SparkSession
 
 object Main{
 
-  def time[R](block: => R): Double = {
-    val t0 = System.nanoTime()
-    val _ = block
-    val t1 = System.nanoTime()
-    println("Elapsed time: " + (t1 - t0)/1000000000.0 + "s")
-    (t1 - t0)/1000000000.0
-  }
-
   def main(args: Array[String]): Unit = {
     val execution = sys.env.getOrElse("environment", "aws")
     val path = sys.env.getOrElse("path", "")
@@ -59,7 +51,7 @@ object Main{
 
     println("Loading dataset ...\n")
     //import Dataset from txt
-    var rumRDD: RDD[Map[String, String]] = Dataset.importRDD(spark, pathDatabase)
+    var rumRDD: RDD[Map[String, String]] = Data.importRDD(spark, pathDatabase)
 
     val originalDatasetSize = new File(pathDatabase).length()
     println(s"Dataset is ~ ${Utils.transformBytes(originalDatasetSize)}")
@@ -69,15 +61,15 @@ object Main{
     if (size != 1.0){
       rumRDD = {
         println(s"Changing size of database by $size times. Dataset will be ~${Utils.transformBytes((originalDatasetSize * size).toLong)}")
-        val enlargedRDD: RDD[Map[String, String]] = Dataset.increaseSizeDf(spark.sparkContext, rumRDD, size = size)
+        val enlargedRDD: RDD[Map[String, String]] = Data.increaseSizeDf(spark.sparkContext, rumRDD, size = size)
         println(s"Dataset now has ${enlargedRDD.count} of reviews")
         enlargedRDD
       }
     }
     //println(s"${rumRDD.partitions.length}")
     //throw new InvalidOp("exit")
-    rumRDD = rumRDD.repartition(3)
-
+    rumRDD = rumRDD.repartition(sys.env.getOrElse("partition", 3).toString.toInt)
+    rumRDD.cache()
     /*val rumDF = rumRDD.map(m => {(
       m.getOrElse("userId", ""),
       m.getOrElse("productId", ""),
@@ -96,7 +88,7 @@ object Main{
 
     //throw new InvalidOp("exit")
 
-    var elapsedTime = 0.0
+    //var elapsedTime = 0.0
     val limitResult = 20
     val fileSource = Utils.openFile(spark, filename)
     for (line <- fileSource.rdd.collect) {
@@ -118,7 +110,7 @@ object Main{
               op(1)
             }
             println(s"$user")
-            elapsedTime = time {
+            Utils.time {
               val r = rc.productRecommendation(rumRDD, user)
                 .toDF("productId", "productPrediction")
                 .orderBy($"productPrediction".desc, $"productId")
@@ -127,11 +119,11 @@ object Main{
               result = r
             }
             val fileName = s"RECOMMEND__$user" +  ".csv"
-            Dataset.storeDfPt1(result, resourcesFile + fileName)
+            Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "rank" =>
             println("Computing Product Ranking ...")
-            elapsedTime = time {
+            Utils.time {
               val r = rk.trueBayesianEstimate(rumRDD)
                 .toDF("productId", "score")
                 .orderBy($"score".desc, $"productId")
@@ -140,7 +132,7 @@ object Main{
               result = r
             }
             val fileName = "RANK.csv"
-            Dataset.storeDfPt1(result, resourcesFile + fileName)
+            Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "evolutionM" =>
             if (op.length < 3)
@@ -152,12 +144,12 @@ object Main{
             val products: Seq[String] = op.slice(3, op.length)
             println(s"Computing monthly time analysis for the year=$year and productsID=$product ${products.mkString(" ")}")
             try{
-              elapsedTime = time {
+              Utils.time {
                     result = ProductTimeAnalysis.timeDFR(spark, rumRDD, product, products: _*)(byMonth = true, yBegin = year).orderBy("month")
                     result.show()
               }
               val fileName = s"PM__$product" + s"_${products.mkString("_")}"+s"_YEAR_$year" + ".csv"
-              Dataset.storeDfPt1(result, resourcesFile + fileName)
+              Data.storeDfPt1(result, resourcesFile + fileName)
               println("Results saved in " + resourcesFile+fileName)
             } catch {
               case _: UnsupportedOperationException => println("Not existing year in the dataset")
@@ -171,7 +163,7 @@ object Main{
             val products: Seq[String] = op.slice(4, op.length)
 
             println(s"Computing yearly time analysis for productsID=$product ${products.mkString(" ")} between the years $yb-$ye")
-            elapsedTime = time {
+            Utils.time {
                 result = ProductTimeAnalysis.timeDFR(spark, rumRDD, product, products: _*)(byMonth = false, yBegin = yb, yEnd = ye).orderBy("year")
                 result.show()
                 if (yb == null) {
@@ -185,13 +177,13 @@ object Main{
             }
             //val fileName = "PY" + LocalDateTime.now.format(DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")) + ".csv"
             val fileName = s"PY_$product" + s"_${products.mkString("_")}"+s"_YEARS_$yb"+s"_$ye" + ".csv"
-            Dataset.storeDfPt1(result, resourcesFile + fileName)
+            Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "helpfulness" =>
             val threshold : Int = op.lift(2).getOrElse("0").toInt
             val limit : Int = op.lift(3).getOrElse("20").toInt
             println(s"Computing User Helpfulness with threshold=$threshold and limiting to $limit results...")
-            elapsedTime = time {
+            Utils.time {
               val r = UserHelpfulness.userHelpfulness(rumRDD, threshold).toDF(
                 "userId", "userHelpfulness")
                 .orderBy(-$"userHelpfulness", $"userId")
@@ -200,7 +192,7 @@ object Main{
               result = r
             }
             val fileName = s"HELPFULNESS_threshold_$threshold" + s"_limit_$limit"+ ".csv"
-            Dataset.storeDfPt1(result, resourcesFile + fileName)
+            Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "" =>
           case _ => throw new InvalidOp("Not allowed operation")

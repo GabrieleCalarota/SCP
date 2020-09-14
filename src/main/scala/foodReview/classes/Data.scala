@@ -8,7 +8,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.math.min
 
-object Dataset {
+object Data {
 
   /**
     * Converts standford txt in RDD of Maps where each Map has "userId", "productId", "score" "time" and "helpfulness"
