@@ -60,21 +60,7 @@ object Main{
     println("Loading dataset ...\n")
     //import Dataset from txt
     var rumRDD: RDD[Map[String, String]] = Dataset.importRDD(spark, pathDatabase)
-    /*val rumDF = rumRDD.map(m => {(
-      m.getOrElse("userId", ""),
-      m.getOrElse("productId", ""),
-      m.getOrElse("score", ""),
-      m.getOrElse("time", ""),
-      m.getOrElse("helpfulness", ""))
-    }).toDF()
-      .withColumnRenamed("_1", "userId")
-      .withColumnRenamed("_2", "productId")
-      .withColumnRenamed("_3", "score")
-      .withColumnRenamed("_4", "time")
-      .withColumnRenamed("_5", "helpfulness")
-    Dataset.storeDfPt1(rumDF, resourcesFile + "dataset.csv")
-    throw new InvalidOp("exit")*/
-    println(s"Original dataset loaded with ${rumRDD.count} reviews")
+
     val originalDatasetSize = new File(pathDatabase).length()
     println(s"Dataset is ~ ${Utils.transformBytes(originalDatasetSize)}")
 
@@ -88,6 +74,25 @@ object Main{
         enlargedRDD
       }
     }
+    //println(s"${rumRDD.partitions.length}")
+    //throw new InvalidOp("exit")
+    rumRDD = rumRDD.repartition(3)
+
+    /*val rumDF = rumRDD.map(m => {(
+      m.getOrElse("userId", ""),
+      m.getOrElse("productId", ""),
+      m.getOrElse("score", ""),
+      m.getOrElse("time", ""),
+      m.getOrElse("helpfulness", ""))
+    }).toDF()
+      .withColumnRenamed("_1", "userId")
+      .withColumnRenamed("_2", "productId")
+      .withColumnRenamed("_3", "score")
+      .withColumnRenamed("_4", "time")
+      .withColumnRenamed("_5", "helpfulness")
+    println(s"Original dataset loaded with ${rumRDD.count} reviews")
+    Dataset.storeDfPt1(rumDF, resourcesFile + "dataset.csv")
+    throw new InvalidOp("exit")*/
 
     //throw new InvalidOp("exit")
 

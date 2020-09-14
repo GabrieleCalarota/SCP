@@ -6,7 +6,6 @@ import org.apache.spark.rdd.RDD
 class ProductRecommendation {
 
   protected var _minCommonProducts = 1
-  protected var _minCommonUsers = 1
   protected var _neighbors = 1000
 
   /**
@@ -14,21 +13,19 @@ class ProductRecommendation {
     *
     * @param rumRDD RDD containing userId, productId, score.
     * @param requester Identifier of the requester.
-    * @param usefulCol Column required in the final comparison.
     * @return Map '_neighbors' elements of 'usefulCol' -> similarity.
     */
-  protected def similarityRDD(rumRDD: RDD[Map[String, String]], requester: String, usefulCol: String): Map[String, Double] = {
-    val (otherCol, minCommon) = usefulCol match {
-      case "productId" => ("userId", _minCommonUsers)
-      case "userId" => ("productId", _minCommonProducts)
-    }
-    val reqScoreRDD = rumRDD.filter(r => r.getOrElse(usefulCol, "-1").equals(requester))
-      .map(k => (k.getOrElse(otherCol, "-1"), k.getOrElse("score", "0.0").toDouble))
+  protected def similarityRDD(rumRDD: RDD[Map[String, String]], requester: String): Map[String, Double] = {
+    val userCol = "userId"
+    val productCol = "productId"
+    val minCommon = _minCommonProducts
+    val reqScoreRDD = rumRDD.filter(r => r.getOrElse(userCol, "-1").equals(requester))
+      .map(k => (k.getOrElse(productCol, "-1"), k.getOrElse("score", "0.0").toDouble))
     val relatedSet = reqScoreRDD.map(_._1).collect().toSet
     // related info excluding the requester
-    val relatedInfoRDD = rumRDD.filter(r => !r.getOrElse(usefulCol, "-1").equals(requester) &&
-      relatedSet.contains(r.getOrElse(otherCol, "-1")))
-      .map(k => (k.getOrElse(usefulCol, "-1"), (k.getOrElse(otherCol, "-1"), k.getOrElse("score", "0.0").toDouble)))
+    val relatedInfoRDD = rumRDD.filter(r => !r.getOrElse(userCol, "-1").equals(requester) &&
+      relatedSet.contains(r.getOrElse(productCol, "-1")))
+      .map(k => (k.getOrElse(userCol, "-1"), (k.getOrElse(productCol, "-1"), k.getOrElse("score", "0.0").toDouble)))
     val toCompare = relatedInfoRDD.map(r => (r._1, 1)).reduceByKey((r1, r2) => r1 + r2)
       .filter(_._2 >= minCommon)
       .map(_._1)
@@ -59,7 +56,7 @@ class ProductRecommendation {
       (k.getOrElse("productId", "-1"), k.getOrElse("score", "0.0").toDouble))
     val avgRequester = userRDD.map(_._2.toDouble).reduce((v1, v2) => v1+v2)/userRDD.count()
     val mUserSet: Set[String] = userRDD.map(_._1).collect().toSet
-    val sim = similarityRDD(rumRDD, user, "userId")
+    val sim = similarityRDD(rumRDD, user)
     val simSum: Double = sim.values.sum
     val neighSet: Set[String] = sim.keys.toSet
     //RDD[users similar to user request]
