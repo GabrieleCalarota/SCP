@@ -5,7 +5,6 @@ import java.io.File
 import foodReview.classes._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-// import java.io.FileWriter // Import required to keep track of elapsed time
 
 
 object Main{
@@ -50,6 +49,7 @@ object Main{
     val rc = new ProductRecommendation()
 
     println("Loading dataset ...\n")
+
     //import Dataset from txt
     var rumRDD: RDD[Map[String, String]] = Data.importRDD(spark, pathDatabase)
 
@@ -66,29 +66,12 @@ object Main{
         enlargedRDD
       }
     }
-    //println(s"${rumRDD.partitions.length}")
-    //throw new InvalidOp("exit")
+
+
     rumRDD = rumRDD.repartition(sys.env.getOrElse("partition", 3).toString.toInt)
     rumRDD.cache()
-    /*val rumDF = rumRDD.map(m => {(
-      m.getOrElse("userId", ""),
-      m.getOrElse("productId", ""),
-      m.getOrElse("score", ""),
-      m.getOrElse("time", ""),
-      m.getOrElse("helpfulness", ""))
-    }).toDF()
-      .withColumnRenamed("_1", "userId")
-      .withColumnRenamed("_2", "productId")
-      .withColumnRenamed("_3", "score")
-      .withColumnRenamed("_4", "time")
-      .withColumnRenamed("_5", "helpfulness")
-    println(s"Original dataset loaded with ${rumRDD.count} reviews")
-    Dataset.storeDfPt1(rumDF, resourcesFile + "dataset.csv")
-    throw new InvalidOp("exit")*/
 
-    //throw new InvalidOp("exit")
 
-    //var elapsedTime = 0.0
     val limitResult = 20
     val fileSource = Utils.openFile(spark, filename)
     for (line <- fileSource.rdd.collect) {
@@ -175,13 +158,12 @@ object Main{
                   println(s"Year of end for productID=$product is ${products.mkString(" ")} $ye")
                 }
             }
-            //val fileName = "PY" + LocalDateTime.now.format(DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")) + ".csv"
             val fileName = s"PY_$product" + s"_${products.mkString("_")}"+s"_YEARS_$yb"+s"_$ye" + ".csv"
             Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "helpfulness" =>
-            val threshold : Int = op.lift(2).getOrElse("0").toInt
-            val limit : Int = op.lift(3).getOrElse("20").toInt
+            val threshold : Int = op.lift(1).getOrElse("0").toInt
+            val limit : Int = op.lift(2).getOrElse("20").toInt
             println(s"Computing User Helpfulness with threshold=$threshold and limiting to $limit results...")
             Utils.time {
               val r = UserHelpfulness.userHelpfulness(rumRDD, threshold).toDF(

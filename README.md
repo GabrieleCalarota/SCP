@@ -1,18 +1,15 @@
-# Food Review Analysis
+# Amazon Food Reviews
 
-## Project
-
-Project developed for [Scalable and Cloud programming course at Unibo](https://www.unibo.it/it/didattica/insegnamenti/insegnamento/2019/412732).
-
-This work is a collaboration between Gabriele Calarota and Alberto Drusiani.
-
-### Description
+## Description
 
 This project allows the analysis of amazon food review dataset, which can be found here:
 
 - [Stanford dataset](https://snap.stanford.edu/data/web-FineFoods.html)
 
 The dataset and all the other resources will be downloaded automatically as the project is executed.
+
+
+## Build & Execution
 
 ### Setup AWS
  - Create a bucket in S3 Storage
@@ -59,9 +56,9 @@ Running the project, the default file for test loaded is `totalTest.txt` which c
 $ export testFileName=testRecommendation.txt
 ```
 
-### Operations allowed
+## Analysis
 
-#### Product Recommendation
+### Product Recommendation
 
 Computes user recommended products, considering its previous reviews and ratings.
 
@@ -71,7 +68,7 @@ Computes user recommended products, considering its previous reviews and ratings
 recommend (userID)
 ```
 
-#### Product Ranking
+### Product Ranking
 
 Computes user recommended products, considering its previous reviews and ratings.
 
@@ -79,7 +76,7 @@ Computes user recommended products, considering its previous reviews and ratings
 rank
 ```
 
-#### Product Time Analysis
+### Product Time Analysis
 
 Creates a csv about the evolution of rating average in time, with columns 
 ```
@@ -92,7 +89,7 @@ The csv file are stored in "resources" folder, with schema: `P year/month _ prod
 *Example: `PY_B001BDDTB2_YEARS_2009_2012.csv` = Product time analysis, yearly based for productID
  B001BDDTB2 between 2009 and 2012*
 
-##### Analysis in an interval
+#### Analysis in an interval
 
 ```
 evolutionY yearBegin yearEnd productID(s)
@@ -101,20 +98,20 @@ evolutionY yearBegin yearEnd productID(s)
 **Note:** to not provide the year of begin (end), replace them with a '-'. 
 In this case we will consider the first(last) year recorded into the dataset.
 
-##### Analysis in a year
+#### Analysis in a year
 
 ```
 evolutionM year productID(s)
 ```
 
-#### User Helpfulness
+### User Helpfulness
 
-Computes the helpfulness of a given user.
+Computes the helpfulness rank.
 
 **Note**: 
- - If no userID is given in input, the program picks one random userID from the dataset 
  - If an user has an helpfulness score that is lower than the average (of the other users that gave the same rating to the same product), 
-its score is incremented by adding the average score to the initial score and dividing by 2. The final helpfulness score is the average of the user helpfulness for the evaluated products.
+its score is incremented by adding the average score to the initial score and dividing by 2. 
+The final helpfulness score is the average of the user helpfulness for the evaluated products.
 
 *Optional arguments:*
  - threshold: filter of helpfulness score for users greater than this value (*default 0*)

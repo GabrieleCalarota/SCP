@@ -30,6 +30,7 @@ object ProductTimeAnalysis {
       case _ => scoreRDD.filter(_._1._2 <= yEnd.toInt)
     }
     // RDD(Id, year, avgScore)
+    //                               (sum of score, sum of cnt)
     scoreEndRDD.reduceByKey((v1,v2)=>(v1._1+v2._1,v1._2+v2._2)).map(y=>(y._1._1, y._1._2,y._2._1/y._2._2))
   }
 
@@ -42,11 +43,13 @@ object ProductTimeAnalysis {
     */
   private def month(tsRDD:RDD[Map[String,String]], year:String): RDD[(String, Int, Double)]  = {
     // RDD ((Id, month), (score, 1 for cnt))
+
     val scoreRDD = tsRDD.map(r=>{
       val dt = new DateTime(r.getOrElse("time","0").toLong * 1000)
       (dt.getYear.toString.toInt,
       (r.getOrElse("productId", "-1"), dt.getMonthOfYear.toString.toInt, r.getOrElse("score","0.0").toDouble,1))
     })
+      // RDD ((Year)(Id, month, score, cnt))
     .filter(_._1==year.toInt).map(m=>((m._2._1, m._2._2),(m._2._3, m._2._4)))
     scoreRDD
       // RDD (sum score, cnt)

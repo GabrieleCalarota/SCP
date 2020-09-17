@@ -45,15 +45,6 @@ object Utils {
   }
 
   /**
-    * Create directory path
-    *
-    * @param path List of path to create
-    * @return True if path was created
-   */
-  def mkdirs(path: List[String]) :Boolean =
-    path.tail.foldLeft(new File(path.head)){(a,b) => a.mkdir; new File(a,b)}.mkdir
-
-  /**
     * Download dataset and unzip in resource directory
     *
     * @param url Dataset url at the time of writing the project
