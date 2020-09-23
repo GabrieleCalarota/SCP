@@ -25,6 +25,7 @@ class ProductRecommendation {
       relatedSet.contains(r.getOrElse(productCol, "-1")))
       //RDD (userId, (productID, score))
       .map(k => (k.getOrElse(userCol, "-1"), (k.getOrElse(productCol, "-1"), k.getOrElse("score", "0.0").toDouble)))
+      .cache()
     //set of users to compare
     val toCompare = relatedInfoRDD.map(r => (r._1, 1)).reduceByKey((r1, r2) => r1 + r2)
       //filter users reviewed at least minCommon products
@@ -36,7 +37,7 @@ class ProductRecommendation {
       .map(r => (r._2._1, (r._1, r._2._2))).join(reqScoreRDD)
     //(productId, ((userId, score1), score2))
       // (userId, (score2^2, score1^2, score2*score1))
-      .map(r => (r._2._1._1, (math.pow(r._2._2.toDouble, 2), math.pow(r._2._1._2, 2), r._2._2 * r._2._1._2)))
+      .map(r => (r._2._1._1, (math.pow(r._2._2.toDouble, 2), math.pow(r._2._1._2, 2), r._2._2 * r._2._1._2))).cache()
     val simFactors = comparativeRDD.reduceByKey((u1, u2) =>
       (u1._1 + u2._1, u1._2 + u2._2, u1._3 + u2._3))
     //(userId, sum_score2*sum_score1/sqrt(sum_score2^2+sum_score1^2))
@@ -60,7 +61,7 @@ class ProductRecommendation {
       throw new InvalidOp("Not existing id")
     //userRDD (productId, score)
     val userRDD = rumRDD.filter(r => r.getOrElse("userId", "-1").equals(user)).map(k =>
-      (k.getOrElse("productId", "-1"), k.getOrElse("score", "0.0").toDouble))
+      (k.getOrElse("productId", "-1"), k.getOrElse("score", "0.0").toDouble)).cache()
     //Computing user average product score
     val avgRequester = userRDD.map(_._2.toDouble).reduce((v1, v2) => v1+v2)/userRDD.count()
     //User product Set

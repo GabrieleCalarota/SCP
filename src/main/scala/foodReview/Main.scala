@@ -68,8 +68,7 @@ object Main{
     }
 
 
-    rumRDD = rumRDD.repartition(sys.env.getOrElse("partition", 3).toString.toInt)
-    rumRDD.cache()
+    rumRDD = rumRDD.repartition(sys.env.getOrElse("partition", 4).toString.toInt)
 
 
     val limitResult = 20
@@ -93,27 +92,25 @@ object Main{
               op(1)
             }
             println(s"$user")
-            Utils.time {
-              val r = rc.productRecommendation(rumRDD, user)
-                .toDF("productId", "productPrediction")
-                .orderBy($"productPrediction".desc, $"productId")
-                .limit(limitResult)
-              r.show(limitResult)
-              result = r
+            result = Utils.time {
+              rc.productRecommendation(rumRDD, user)
             }
+              .toDF("productId", "productPrediction")
+              .orderBy($"productPrediction".desc, $"productId")
+              .limit(limitResult)
+            result.show(limitResult)
             val fileName = s"RECOMMEND__$user" +  ".csv"
             Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
           case "rank" =>
             println("Computing Product Ranking ...")
-            Utils.time {
-              val r = rk.trueBayesianEstimate(rumRDD)
-                .toDF("productId", "score")
-                .orderBy($"score".desc, $"productId")
-                .limit(limitResult)
-              r.show(limitResult)
-              result = r
+            result = Utils.time {
+              rk.trueBayesianEstimate(rumRDD)
             }
+              .toDF("productId", "score")
+              .orderBy($"score".desc, $"productId")
+              .limit(limitResult)
+            result.show(limitResult)
             val fileName = "RANK.csv"
             Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
@@ -165,14 +162,13 @@ object Main{
             val threshold : Int = op.lift(1).getOrElse("0").toInt
             val limit : Int = op.lift(2).getOrElse("20").toInt
             println(s"Computing User Helpfulness with threshold=$threshold and limiting to $limit results...")
-            Utils.time {
-              val r = UserHelpfulness.userHelpfulness(rumRDD, threshold).toDF(
-                "userId", "userHelpfulness")
-                .orderBy(-$"userHelpfulness", $"userId")
-                .limit(limit)
-              r.show(limit)
-              result = r
-            }
+            result = Utils.time {
+              UserHelpfulness.userHelpfulness(rumRDD, threshold)
+            }.toDF(
+              "userId", "userHelpfulness")
+              .orderBy(-$"userHelpfulness", $"userId")
+              .limit(limit)
+            result.show(limit)
             val fileName = s"HELPFULNESS_threshold_$threshold" + s"_limit_$limit"+ ".csv"
             Data.storeDfPt1(result, resourcesFile + fileName)
             println("Results saved in " + resourcesFile+fileName)
