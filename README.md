@@ -13,7 +13,7 @@ The dataset and all the other resources will be downloaded automatically as the 
 
 ### Setup AWS
  - Create a bucket in S3 Storage
- - Upload all the project files (or eventually only test files)
+ - Upload all the project files (Only the test files are required)
  - Compile the project and upload the jar file to the bucket
  - Setup a cluster (EMR). The project has been tested under this configurations: emr-5.30.1, m5.xlarge, Spark 2.4.5 - Zeppelin 0.8.2
  - Connect through ssh to the master node
@@ -48,9 +48,9 @@ $ sbt assembly
 
 ### Test provided
 
-In `src/test/scala` we provided a set of test, one for each operation allowed with the dataset provided and a `totalTest.txt` with a mixin of operation.
+In `src/test/scala` we provided a set of tests, one for each operation allowed with the dataset provided and a `totalTest.txt` with a mixin of operation.
 
-Running the project, the default file for test loaded is `totalTest.txt` which can be edited or change the environment variable like as follow:
+Running the project, the default file loaded for test is `totalTest.txt`. To prevent the default behaviour, set the environment variable like below:
 
 ```$xslt
 $ export testFileName=testRecommendation.txt
@@ -60,7 +60,7 @@ $ export testFileName=testRecommendation.txt
 
 ### Product Recommendation
 
-Computes user recommended products, considering its previous reviews and ratings.
+Computes user recommended products, considering its previous reviews and ratings compared to similar users.
 
 **Note**: If no userID is given in input, the program picks one random userID from the dataset 
 
@@ -70,7 +70,7 @@ recommend (userID)
 
 ### Product Ranking
 
-Computes user recommended products, considering its previous reviews and ratings.
+Computes the product ranking with the bayesian mean rating algorithm.
 
 ```
 rank
@@ -89,7 +89,7 @@ The csv file are stored in "resources" folder, with schema: `P year/month _ prod
 *Example: `PY_B001BDDTB2_YEARS_2009_2012.csv` = Product time analysis, yearly based for productID
  B001BDDTB2 between 2009 and 2012*
 
-#### Analysis in an interval
+#### Analysis in an interval of years
 
 ```
 evolutionY yearBegin yearEnd productID(s)
@@ -98,7 +98,7 @@ evolutionY yearBegin yearEnd productID(s)
 **Note:** to not provide the year of begin (end), replace them with a '-'. 
 In this case we will consider the first(last) year recorded into the dataset.
 
-#### Analysis in a year
+#### Analysis per month in a specific year
 
 ```
 evolutionM year productID(s)
@@ -106,7 +106,7 @@ evolutionM year productID(s)
 
 ### User Helpfulness
 
-Computes the helpfulness rank.
+Computes the helpfulness of users' reviews rank.
 
 **Note**: 
  - If an user has an helpfulness score that is lower than the average (of the other users that gave the same rating to the same product), 
